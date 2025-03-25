@@ -1,0 +1,169 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}
+\geometry{
+	a4paper,
+	total={170mm,257mm},
+	left=20mm,
+	top=20mm,}
+\usepackage{cite}
+
+%\usepackage{lineno}
+\usepackage{xcolor}
+% use this instead for A4 paper
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{tocloft}
+\usepackage[]{algorithm2e}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[titletoc]{appendix}
+ \renewcommand{\familydefault}{\sfdefault}
+\usepackage{helvet}
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+%opening
+\title{\textbf{Build an AI Agent for Medical Case Queue Management}}
+\author{Varanasi Satya Sreekanth\\
+	(varanasi\_sreekanth@yahoo.com)\\Phone:+91-9182495028}
+
+\begin{document}
+	\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+
+\section{Introduction}	This document describes the implementation of a reinforcement learning (RL) agent using Proximal Policy Optimization (PPO) for medical case assignment. The goal is to optimize efficiency, reduce misassignments, and ensure Service Level Agreement (SLA) compliance while dynamically adapting to changes in hospital policies. The learned AI agent will use Deep Reinforcement Learning (DRL), specifically Proximal Policy Optimization (PPO), to optimize medical case assignments. It will consider factors like doctor availability, case urgency, specialization requirements, and compliance with SLAs. The agent will also adapt to changes in hospital policies in real-time. 
+\begin{enumerate}
+\item Reinforcement Learning: Uses PPO to optimize case assignments dynamically.
+\item Doctor Availability: The model learns to prioritize available doctors.
+\item Urgency & SLA Compliance: It optimizes assignments based on urgency and SLA rules.
+\item Adaptability: Adjusts to evolving policies and real-time availability changes.
+\end{enumerate}
+\section{Methodology}
+
+\subsection{Overview}
+PPO is a policy gradient method introduced by OpenAI that improves upon earlier algorithms like Trust Region Policy Optimization (TRPO). PPO is widely used due to its simplicity, efficiency, and robustness.
+
+\subsection{Need for Choosing PPO}
+Traditional policy gradient methods, like REINFORCE, suffer from high variance and instability. Trust Region Policy Optimization (TRPO) improved stability by enforcing a constraint on policy updates but was computationally expensive. PPO simplifies TRPO while maintaining stability by using a clipped surrogate objective function.
+
+\subsection{Mathematical Formulation of PPO}
+
+\subsubsection{Policy Gradient Theorem}
+Policy gradient methods optimize the policy  by maximizing the expected reward:
+\begin{equation}
+	J(\theta) = \mathbb{E}{\tau \sim \pi{\theta}} \left[ \sum_{t=0}^{T} r_t \right]
+\end{equation}
+where  is a trajectory sampled from the policy.
+
+The policy is updated using the gradient of the objective function:
+\begin{equation}
+	\nabla_\theta J(\theta) = \mathbb{E}{\tau \sim \pi\theta} \left[ \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t | s_t) A_t \right]
+\end{equation}
+where  is the advantage function.
+
+\subsubsection{PPO Objective Function}
+PPO introduces a clipped objective function to prevent large policy updates:
+\begin{equation}
+	L(\theta) = \mathbb{E}_t \left[ \min(r_t(\theta) A_t, \text{clip}(r_t(\theta), 1 - \epsilon, 1 + \epsilon) A_t) \right]
+\end{equation}
+where  is the probability ratio and  is a small positive constant (e.g., 0.2).
+
+\subsubsection{Clipping Mechanism}
+The clip function ensures that updates are within a reasonable range, avoiding instability.
+
+
+
+\section{Medical Case Queue Management in View of Proximal Policy Optimization}
+The RL environment models the hospital system as a Markov Decision Process (MDP).
+\begin{enumerate}
+	\item \textbf{Action Space:} The agent selects a doctor from a fixed number of available doctors:
+	\begin{equation}
+		\mathcal{A} = \{ 0, 1, \dots, N_d - 1 \}
+	\end{equation}
+	where $N_d$ is the number of doctors.
+	
+	\item \textbf{Observation Space:}
+	Each patient case is represented by a 9-dimensional feature vector:
+	\begin{equation}
+		s = [\text{age}, \text{gender}, \text{medical history}, \text{urgency}, \text{availability}, \text{SLA compliance}, \text{experience}, \text{ratings}, \text{priority}]
+	\end{equation}
+	
+	\item \textbf{Loading Patient Data}
+	Patient details are loaded from a CSV file, ensuring scalability.
+	
+\item 	\textbf{Reward Function}
+	The PPO agent maximizes a reward function based on assignment quality. The reward function includes:
+	\begin{enumerate}
+		\item Penalty for assigning unavailable doctors: $-10$
+		\item Penalty for exceeding max workload: $-5$
+		\item Matching medical history with experience:
+		\begin{equation}
+			R_\text{match} = 10 \times (1 - |\text{history} - \text{experience}|)
+		\end{equation}
+		\item Reward for handling urgent cases: $+5 \times \text{case urgency}$
+		\item Reward for SLA compliance: $+10 \times \text{SLA compliance}$
+		\item Reward for assigning highly rated doctors: $+5 \times \text{ratings}$
+		\item Penalty for repeated misassignments: $-2 \times \text{misassignments}$
+	\end{enumerate}
+	
+	\item \textbf{Mapping Variables to PPO}
+	PPO is a policy-gradient-based reinforcement learning algorithm. The mapping of RL variables to PPO is shown in Table~\ref{tab:ppo_mapping}.
+	
+	\begin{table}[h]
+		\centering
+		\begin{tabular}{|C|C|}
+	\hline
+			\textbf{PPO Concept} & \textbf{Code Variables} \\ \hline
+		
+			State (Observation) & $s$ (9-dimensional feature vector) \\ \hline
+			Action Selection & $a \in \mathcal{A}$ (choosing a doctor) \\ \hline
+			Policy Network & $\pi_\theta(s)$ (learned policy) \\ \hline
+			Reward Function & $r$ (as defined above) \\ \hline
+			Advantage Estimation & PPO estimates $A(s, a)$ \\ \hline
+			Value Function (Critic) & $V_\theta(s)$ \\ \hline
+			Exploration-Exploitation & PPO clipping mechanism \\ \hline
+			
+		\end{tabular}
+		\caption{Mapping between PPO concepts and RL environment variables.}
+		\label{tab:ppo_mapping}
+	\end{table}
+	
+	
+\end{enumerate}
+
+
+
+
+\section{Training the PPO Agent}
+The PPO agent is trained using Stable-Baselines3:
+\begin{verbatim}
+	model = PPO("MlpPolicy", env, verbose=1)
+	model.learn(total_timesteps=10000)
+\end{verbatim}
+
+\section{Evaluation and Performance Metrics}
+Performance is measured using the following metrics:
+\begin{itemize}
+	\item \textbf{Average Patient Wait Time} \quad $\mathbb{E}[T_\text{wait}]$
+	\item \textbf{Doctor Utilization Rate} \quad $\frac{\text{assigned cases}}{\text{max cases per doctor}}$
+	\item \textbf{Misassignment Rate} \quad $\mathbb{E}[\text{misassignments}]$
+	\item \textbf{SLA Compliance Rate} \quad $\mathbb{E}[\text{SLA compliance}]$
+\end{itemize}
+
+
+\section{References}
+\begin{enumerate}
+	\item Schulman, John, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov. ``Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).
+	\item Gu, Yang, Yuhu Cheng, CL Philip Chen, and Xuesong Wang.``Proximal policy optimization with policy feedback." IEEE Transactions on Systems, Man, and Cybernetics: Systems 52, no. 7 (2021): 4600-4610.
+	
+	\item Zhang, Junwei, Zhenghao Zhang, Shuai Han, and Shuai Lü. ``Proximal policy optimization via enhanced exploration efficiency." Information Sciences 609 (2022): 750-765.
+	\item OpenAI’s PPO Implementation: \url{https://spinningup.openai.com/en/latest/algorithms/ppo.html}
+\end{enumerate}
+
+
+
+
+
+ \end{document}

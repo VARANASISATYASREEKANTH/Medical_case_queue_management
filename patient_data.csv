@@ -1,0 +1,6 @@
+patient_id,age,gender,medical_history,symptoms,urgency,preferred_doctor
+1,45,Male,2,Chest Pain,5,1
+2,60,Female,3,Headache,3,2
+3,30,Male,1,Cough,2,3
+4,70,Female,4,Fever,4,4
+5,25,Male,2,Shortness of Breath,5,5
